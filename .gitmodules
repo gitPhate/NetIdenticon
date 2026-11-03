@@ -1,0 +1,3 @@
+[submodule "reference/identicon"]
+	path = reference/identicon
+	url = https://github.com/dgraham/identicon
