@@ -113,9 +113,6 @@ UpgradeLog*.htm
 .idea/
 *.*.iml
 
-*.dll
-!/RequiredPackages/*.dll
-
-
-# BenchmarkDotNet
-BenchmarkDotNet.Artifacts/
+# Rust
+reference-ffi/target/
+reference-ffi/Cargo.lock

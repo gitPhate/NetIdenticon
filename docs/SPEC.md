@@ -73,9 +73,9 @@ Native assets: `SkiaSharp` ships the Windows and macOS binaries. Linux consumers
 
 These tests run the Rust implementation in-process and compare its output with ours for arbitrary hash bytes. That covers what the golden files can't: hand-picked edge cases and large random samples.
 
-**Reference source.** Add `dgraham/identicon` as a git submodule at `reference/identicon`, pinned to a specific commit, so both the tests and CI use the exact version we ported.
+**Reference source.** Add `dgraham/identicon` as a git submodule at `reference/identicon`, pinned to a specific commit, so the tests use the exact version we ported.
 
-**Rust wrapper crate** (`tests/reference-ffi/`). This is a `cdylib` crate that depends on the submodule by path and exposes C functions for the C# tests to call:
+**Rust wrapper crate** (`src/reference-ffi/`). This is a `cdylib` crate that depends on the submodule by path and exposes C functions for the C# tests to call:
 
 ```rust
 // Full image: writes 420*420*3 RGB bytes to out.
@@ -98,9 +98,7 @@ pub extern "C" fn identicon_foreground(hash: *const u8, out: *mut u8);
 - Edge hashes: all `0x00`, all `0xff`, alternating nibbles, and each of `s[12..15]` at its minimum and maximum. Full image compared pixel by pixel.
 - Random hashes: 10,000 per run with a fixed seed, plus a fresh seed that is logged so a failure can be reproduced. Full image compared.
 - Exhaustive grid: all 2¹⁵ nibble-parity patterns. Compare only which cells are filled, by sampling one pixel per cell.
-- Exhaustive color: all 2²⁸ values of `(h, s[14], s[15])` against `identicon_foreground`, run in parallel. This is the test that catches `float` and rounding drift. Because it is slow, it lives in a separate `ReferenceExhaustive` category that runs only nightly or when requested.
-
-**CI.** One job installs Rust, runs `cargo build --release` in `tests/reference-ffi`, and then runs `dotnet test --filter Category=Reference`.
+- Exhaustive color: all 2²⁸ values of `(h, s[14], s[15])` against `identicon_foreground`, run in parallel. This is the test that catches `float` and rounding drift. Because it is slow, it lives in a separate `ReferenceExhaustive` category that runs only when requested.
 
 ## License
 
