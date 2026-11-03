@@ -1,0 +1,48 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write # enable GitHub OIDC token issuance for this job
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Test
+        run: dotnet test src/NetIdenticon.Tests/NetIdenticon.Tests.csproj -c Release
+
+      - name: Build Rust reference library
+        run: cargo build --release --manifest-path src/reference-ffi/Cargo.toml
+
+      - name: Reference tests
+        run: dotnet test src/NetIdenticon.ReferenceTests/NetIdenticon.ReferenceTests.csproj -c Release --filter Category=Reference
+        env:
+          IDENTICON_FFI_PATH: ${{ github.workspace }}/src/reference-ffi/target/release/libidenticon_reference_ffi.so
+
+      - name: Pack
+        run: dotnet pack src/NetIdenticon/NetIdenticon.csproj -c Release -o artifacts
+
+      - name: NuGet login (OIDC -> temp API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: NuGet push
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
